@@ -46,6 +46,7 @@ CREATE TABLE reservations (
     table_id INT NOT NULL,
     slot_id INT NOT NULL,
     reservation_date DATE NOT NULL,
+    party_size INT NOT NULL,
     status ENUM('confirmed', 'cancelled')
         NOT NULL DEFAULT 'confirmed',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -61,6 +62,8 @@ CREATE TABLE reservations (
     FOREIGN KEY (table_id) REFERENCES restaurant_tables(id),
     FOREIGN KEY (slot_id) REFERENCES time_slots(id),
 
+    CHECK (party_size > 0),
+
     UNIQUE KEY unique_active_booking (
         active_table_id,
         reservation_date,
@@ -69,7 +72,7 @@ CREATE TABLE reservations (
 
     INDEX idx_reservation_user (user_id),
     INDEX idx_reservation_date (reservation_date, slot_id)
-    );
+);
 
 
 
