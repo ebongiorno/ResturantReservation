@@ -75,3 +75,19 @@ Backup of *.doc*
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,microsoftoffice,visualstudiocode
+
+# Python virtual environment
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Pytest
+.pytest_cache/
