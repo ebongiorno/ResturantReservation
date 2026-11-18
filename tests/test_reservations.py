@@ -31,3 +31,19 @@ def test_duplicate_reservation(client, auth_headers, reservation_data):
 
     assert first.status_code == 201
     assert second.status_code == 409
+
+
+# Test that party size cannot be negative
+def test_negative_party_size(client, auth_headers, reservation_data):
+
+    # Change the valid party size to an invalid value
+    reservation_data["party_size"] = -1
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json["error"]["code"] == "invalid_input"
