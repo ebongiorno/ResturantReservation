@@ -80,3 +80,14 @@ def test_invalid_table(client, auth_headers, reservation_data):
 
     assert response.status_code == 404
     assert response.json["error"]["code"] == "not_found"
+
+
+# Test that reservations require authentication
+def test_missing_token(client, reservation_data):
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data
+    )
+
+    assert response.status_code == 401
