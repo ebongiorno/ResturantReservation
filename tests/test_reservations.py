@@ -104,3 +104,19 @@ def test_staff_cannot_book(client, staff_headers, reservation_data):
 
     assert response.status_code == 403
     assert response.json["error"]["code"] == "forbidden"
+
+
+# Test that reservations cannot be made for past dates
+def test_past_reservation_date(client, auth_headers, reservation_data):
+
+    # Change the date to one in the past
+    reservation_data["reservation_date"] = "2020-01-01"
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json["error"]["code"] == "invalid_input"
