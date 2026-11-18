@@ -91,3 +91,16 @@ def test_missing_token(client, reservation_data):
     )
 
     assert response.status_code == 401
+
+
+# Test that staff cannot create customer reservations
+def test_staff_cannot_book(client, staff_headers, reservation_data):
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=staff_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json["error"]["code"] == "forbidden"
