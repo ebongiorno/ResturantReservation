@@ -11,3 +11,23 @@ def test_create_reservation(client, auth_headers, reservation_data):
     assert response.json["status"] == "confirmed"
     assert response.json["party_size"] == 4
 
+
+# Test that the same table cannot be booked twice
+def test_duplicate_reservation(client, auth_headers, reservation_data):
+
+    # First reservation should succeed
+    first = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    # Second reservation uses the exact same information
+    second = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 409
