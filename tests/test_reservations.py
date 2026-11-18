@@ -136,3 +136,19 @@ def test_invalid_time_slot(client, auth_headers, reservation_data):
 
     assert response.status_code == 404
     assert response.json["error"]["code"] == "not_found"
+
+
+# Test that missing required fields return 400
+def test_missing_required_field(client, auth_headers, reservation_data):
+
+    # Remove party_size from the request
+    del reservation_data["party_size"]
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json["error"]["code"] == "invalid_input"
