@@ -1,6 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
+# =========================================
+# POST endpoint tests
+# =========================================
 # Test creating a valid reservation
 def test_create_reservation(client, auth_headers, reservation_data):
 
