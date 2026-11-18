@@ -1,3 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+
 # Test creating a valid reservation
 def test_create_reservation(client, auth_headers, reservation_data):
 
@@ -152,3 +155,31 @@ def test_missing_required_field(client, auth_headers, reservation_data):
 
     assert response.status_code == 400
     assert response.json["error"]["code"] == "invalid_input"
+
+
+# Test two requests competing for the same table
+def test_concurrent_reservations(app, token, reservation_data):
+
+    barrier = Barrier(2)
+
+    # Each thread sends its own POST request
+    def book_table():
+        with app.test_client() as client:
+            barrier.wait()
+
+            response = client.post(
+                "/api/v1/reservations",
+                json=reservation_data,
+                headers={"Authorization": f"Bearer {token}"}
+            )
+
+            return response.status_code
+
+    # Run two booking requests concurrently
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(book_table)
+        second = executor.submit(book_table)
+
+        results = [first.result(), second.result()]
+
+    assert sorted(results) == [201, 409]
