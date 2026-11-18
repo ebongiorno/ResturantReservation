@@ -47,3 +47,20 @@ def test_negative_party_size(client, auth_headers, reservation_data):
 
     assert response.status_code == 400
     assert response.json["error"]["code"] == "invalid_input"
+
+
+# Test that party size cannot exceed table capacity
+def test_table_capacity(client, auth_headers, reservation_data):
+
+    # Table 1 has a capacity of 2
+    reservation_data["table_id"] = 1
+    reservation_data["party_size"] = 4
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json["error"]["code"] == "invalid_input"
