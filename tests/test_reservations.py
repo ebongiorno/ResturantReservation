@@ -120,3 +120,19 @@ def test_past_reservation_date(client, auth_headers, reservation_data):
 
     assert response.status_code == 400
     assert response.json["error"]["code"] == "invalid_input"
+
+
+# Test that a nonexistent time slot returns 404
+def test_invalid_time_slot(client, auth_headers, reservation_data):
+
+    # Use a time slot ID that does not exist
+    reservation_data["slot_id"] = 999999
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json["error"]["code"] == "not_found"
