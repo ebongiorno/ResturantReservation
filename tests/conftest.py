@@ -2,7 +2,7 @@ import uuid
 from datetime import date, timedelta
 
 import pytest
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, decode_token
 from werkzeug.security import generate_password_hash
 
 from app import create_app
@@ -102,3 +102,31 @@ def reservation_data():
         ).isoformat(),
         "party_size": 4
     }
+
+
+@pytest.fixture
+def staff_headers(app, token):
+    # Get the user ID from our test JWT
+    with app.app_context():
+        user_id = decode_token(token)["sub"]
+
+    conn = get_db()
+
+    if conn.database != TEST_DB:
+        conn.close()
+        raise RuntimeError("Not connected to test database!")
+
+    cursor = conn.cursor()
+
+    try:
+        # Change our temporary customer into a staff user
+        cursor.execute(
+            "UPDATE users SET role = 'staff' WHERE id = %s",
+            (user_id,)
+        )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    return {"Authorization": f"Bearer {token}"}
