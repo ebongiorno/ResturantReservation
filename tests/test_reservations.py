@@ -64,3 +64,19 @@ def test_table_capacity(client, auth_headers, reservation_data):
 
     assert response.status_code == 400
     assert response.json["error"]["code"] == "invalid_input"
+
+
+# Test that a nonexistent table returns 404
+def test_invalid_table(client, auth_headers, reservation_data):
+
+    # Use a table ID that does not exist
+    reservation_data["table_id"] = 999999
+
+    response = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json["error"]["code"] == "not_found"
