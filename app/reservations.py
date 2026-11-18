@@ -17,10 +17,17 @@ reservations_bp = Blueprint(
 )
 
 # Consistent JSON error responses
-def api_error(code, message, status):
+def error(message, status):
     return jsonify({
         "error": {
-            "code": code,
+            "code": {
+                400: "invalid_input",
+                401: "unauthorized",
+                403: "forbidden",
+                404: "not_found",
+                409: "conflict",
+                500: "database_error"
+            }[status],
             "message": message
         }
     }), status
