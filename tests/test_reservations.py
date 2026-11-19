@@ -439,3 +439,13 @@ def test_invalid_pagination(client, auth_headers):
 
     assert response.status_code == 400
     assert response.json["error"]["code"] == "invalid_input"
+
+
+# Test that GET requests require authentication
+def test_get_without_token(client):
+
+    response = client.get(
+        "/api/v1/reservations"
+    )
+
+    assert response.status_code == 401
