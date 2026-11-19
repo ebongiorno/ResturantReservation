@@ -186,3 +186,32 @@ def test_concurrent_reservations(app, token, reservation_data):
         results = [first.result(), second.result()]
 
     assert sorted(results) == [201, 409]
+
+
+# =========================================
+# GET endpoint tests
+# =========================================
+
+# Test that customers can retrieve their reservations
+def test_get_reservations(client, auth_headers, reservation_data):
+
+    # Create a reservation first
+    created = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert created.status_code == 201
+
+    # Retrieve the customer's reservations
+    response = client.get(
+        "/api/v1/reservations",
+        headers=auth_headers
+    )
+
+    assert response.status_code == 200
+    assert any(
+        reservation["id"] == created.json["id"]
+        for reservation in response.json["reservations"]
+    )
