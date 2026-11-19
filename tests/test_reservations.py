@@ -349,3 +349,32 @@ def test_get_only_own_reservations(
 
     # Customer A cannot see Customer B's reservation
     assert second.json["id"] not in reservation_ids
+
+
+# Test that staff can retrieve customer reservations
+def test_staff_get_all_reservations(
+    client, staff_headers, other_customer_headers, reservation_data
+):
+
+    # Create a reservation as a customer
+    created = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=other_customer_headers
+    )
+
+    assert created.status_code == 201
+
+    # Staff retrieves the reservation list
+    response = client.get(
+        "/api/v1/reservations",
+        headers=staff_headers
+    )
+
+    assert response.status_code == 200
+
+    reservations = response.json["reservations"]
+    reservation_ids = [r["id"] for r in reservations]
+
+    # Staff can see the customer's reservation
+    assert created.json["id"] in reservation_ids
