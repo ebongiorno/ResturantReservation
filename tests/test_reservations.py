@@ -280,3 +280,29 @@ def test_get_other_customer_reservation(
 
     assert response.status_code == 403
     assert response.json["error"]["code"] == "forbidden"
+
+
+# Test that staff can view a customer's reservation
+def test_staff_get_reservation(
+    client, staff_headers, other_customer_headers, reservation_data
+):
+
+    # Customer creates a reservation
+    created = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=other_customer_headers
+    )
+
+    assert created.status_code == 201
+
+    reservation_id = created.json["id"]
+
+    # Staff retrieves the customer's reservation
+    response = client.get(
+        f"/api/v1/reservations/{reservation_id}",
+        headers=staff_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json["id"] == reservation_id
