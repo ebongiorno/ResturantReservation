@@ -34,10 +34,93 @@ def error(message, status):
 def valid_positive_integer(value):
     return type(value) is int and value > 0
 
+
 # GET /api/v1/reservations
 @reservations_bp.get("")
+@jwt_required()
 def get_reservations():
-    return jsonify({"reservations": []}), 200
+
+    user_id = int(get_jwt_identity())
+
+    # Check pagination parameters
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 10))
+    except (ValueError, TypeError):
+        return error("Invalid pagination parameters", 400)
+
+    if page < 1 or not 1 <= per_page <= 100:
+        return error("Invalid pagination parameters", 400)
+
+    offset = (page - 1) * per_page
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Find the logged-in user's role
+        cursor.execute(
+            "SELECT role FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+
+        if user is None:
+            return error("User not found", 401)
+
+        # 2. Staff can see all reservations
+        if user["role"] == "staff":
+            cursor.execute(
+                """
+                SELECT id, user_id, table_id, slot_id,
+                       reservation_date, party_size, status
+                FROM reservations
+                ORDER BY reservation_date DESC, id DESC
+                LIMIT %s OFFSET %s
+                """,
+                (per_page, offset)
+            )
+
+        # 3. Customers can only see their own
+        else:
+            cursor.execute(
+                """
+                SELECT id, user_id, table_id, slot_id,
+                       reservation_date, party_size, status
+                FROM reservations
+                WHERE user_id = %s
+                ORDER BY reservation_date DESC, id DESC
+                LIMIT %s OFFSET %s
+                """,
+                (user_id, per_page, offset)
+            )
+
+        reservations = cursor.fetchall()
+
+        # 4. Format dates as YYYY-MM-DD
+        for reservation in reservations:
+            reservation["reservation_date"] = (
+                reservation["reservation_date"].isoformat()
+            )
+
+        return jsonify({
+            "reservations": reservations,
+            "page": page,
+            "per_page": per_page
+        }), 200
+
+    except Error:
+        current_app.logger.exception("Error retrieving reservations")
+        return error("Database error", 500)
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
 
 # POST /api/v1/reservations
 @reservations_bp.post("")
@@ -166,3 +249,4 @@ def create_reservation():
             if cursor is not None:
                 cursor.close()
             conn.close()
+
