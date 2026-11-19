@@ -215,3 +215,30 @@ def test_get_reservations(client, auth_headers, reservation_data):
         reservation["id"] == created.json["id"]
         for reservation in response.json["reservations"]
     )
+
+
+# Test that a customer can retrieve a specific reservation
+def test_get_reservation_by_id(client, auth_headers, reservation_data):
+
+    # Create a reservation first
+    created = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert created.status_code == 201
+
+    # Get the ID of the new reservation
+    reservation_id = created.json["id"]
+
+    # Retrieve that specific reservation
+    response = client.get(
+        f"/api/v1/reservations/{reservation_id}",
+        headers=auth_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json["id"] == reservation_id
+    assert response.json["party_size"] == 4
+    assert response.json["status"] == "confirmed"
