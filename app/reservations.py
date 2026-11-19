@@ -122,6 +122,67 @@ def get_reservations():
         if conn is not None:
             conn.close()
 
+# GET /api/v1/reservations/<id>
+@reservations_bp.get("/<int:reservation_id>")
+@jwt_required()
+def get_reservation(reservation_id):
+
+    user_id = int(get_jwt_identity())
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Find the logged-in user's role
+        cursor.execute(
+            "SELECT role FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+
+        if user is None:
+            return error("User not found", 401)
+
+        # 2. Find the requested reservation
+        cursor.execute(
+            """
+            SELECT id, user_id, table_id, slot_id,
+                   reservation_date, party_size, status
+            FROM reservations
+            WHERE id = %s
+            """,
+            (reservation_id,)
+        )
+        reservation = cursor.fetchone()
+
+        if reservation is None:
+            return error("Reservation not found", 404)
+
+        # 3. Check reservation ownership
+        if user["role"] != "staff" and reservation["user_id"] != user_id:
+            return error("You cannot view this reservation", 403)
+
+        # 4. Format the date
+        reservation["reservation_date"] = (
+            reservation["reservation_date"].isoformat()
+        )
+
+        return jsonify(reservation), 200
+
+    except Error:
+        current_app.logger.exception("Error retrieving reservation")
+        return error("Database error", 500)
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+
+
 # POST /api/v1/reservations
 @reservations_bp.post("")
 @jwt_required()
