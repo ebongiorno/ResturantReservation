@@ -254,3 +254,29 @@ def test_get_invalid_reservation(client, auth_headers):
 
     assert response.status_code == 404
     assert response.json["error"]["code"] == "not_found"
+
+
+# Test that customers cannot view another customer's reservation
+def test_get_other_customer_reservation(
+    client, auth_headers, other_customer_headers, reservation_data
+):
+
+    # Customer A creates a reservation
+    created = client.post(
+        "/api/v1/reservations",
+        json=reservation_data,
+        headers=auth_headers
+    )
+
+    assert created.status_code == 201
+
+    reservation_id = created.json["id"]
+
+    # Customer B tries to retrieve Customer A's reservation
+    response = client.get(
+        f"/api/v1/reservations/{reservation_id}",
+        headers=other_customer_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json["error"]["code"] == "forbidden"
