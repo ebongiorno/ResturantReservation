@@ -130,3 +130,60 @@ def staff_headers(app, token):
         conn.close()
 
     return {"Authorization": f"Bearer {token}"}
+
+
+# Create a second customer for ownership tests
+@pytest.fixture
+def other_customer_headers(app):
+    conn = get_db()
+
+    if conn.database != TEST_DB:
+        conn.close()
+        raise RuntimeError("Not connected to test database!")
+
+    cursor = conn.cursor()
+    user_id = None
+
+    try:
+        email = f"other-{uuid.uuid4().hex}@example.invalid"
+
+        cursor.execute(
+            """
+            INSERT INTO users
+                (name, email, password_hash, role)
+            VALUES (%s, %s, %s, 'customer')
+            """,
+            (
+                "Other Customer",
+                email,
+                generate_password_hash("test-password")
+            )
+        )
+
+        user_id = cursor.lastrowid
+        conn.commit()
+
+        with app.app_context():
+            token = create_access_token(identity=str(user_id))
+
+        yield {"Authorization": f"Bearer {token}"}
+
+    finally:
+        # Delete records belonging to this customer
+        if user_id is not None:
+            cursor.execute(
+                "DELETE FROM reservations WHERE user_id = %s",
+                (user_id,)
+            )
+            cursor.execute(
+                "DELETE FROM waitlist_entries WHERE user_id = %s",
+                (user_id,)
+            )
+            cursor.execute(
+                "DELETE FROM users WHERE id = %s",
+                (user_id,)
+            )
+            conn.commit()
+
+        cursor.close()
+        conn.close()
