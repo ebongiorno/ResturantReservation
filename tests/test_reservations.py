@@ -378,3 +378,52 @@ def test_staff_get_all_reservations(
 
     # Staff can see the customer's reservation
     assert created.json["id"] in reservation_ids
+
+
+# Test that reservation pagination works
+def test_reservation_pagination(
+    client, auth_headers, reservation_data
+):
+
+    # Create three reservations in different time slots
+    created_ids = []
+
+    for slot_id in [1, 2, 3]:
+        data = reservation_data.copy()
+        data["slot_id"] = slot_id
+
+        response = client.post(
+            "/api/v1/reservations",
+            json=data,
+            headers=auth_headers
+        )
+
+        assert response.status_code == 201
+        created_ids.append(response.json["id"])
+
+    # Get page 1 with two reservations per page
+    first_page = client.get(
+        "/api/v1/reservations?page=1&per_page=2",
+        headers=auth_headers
+    )
+
+    # Get page 2
+    second_page = client.get(
+        "/api/v1/reservations?page=2&per_page=2",
+        headers=auth_headers
+    )
+
+    assert first_page.status_code == 200
+    assert second_page.status_code == 200
+
+    assert len(first_page.json["reservations"]) == 2
+    assert len(second_page.json["reservations"]) == 1
+
+    # Make sure all three reservations were returned
+    all_ids = [
+        r["id"] for r in first_page.json["reservations"]
+    ] + [
+        r["id"] for r in second_page.json["reservations"]
+    ]
+
+    assert set(all_ids) == set(created_ids)
