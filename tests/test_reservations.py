@@ -242,3 +242,15 @@ def test_get_reservation_by_id(client, auth_headers, reservation_data):
     assert response.json["id"] == reservation_id
     assert response.json["party_size"] == 4
     assert response.json["status"] == "confirmed"
+
+
+# Test retrieving a reservation that doesn't exist
+def test_get_invalid_reservation(client, auth_headers):
+
+    response = client.get(
+        "/api/v1/reservations/999999",
+        headers=auth_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json["error"]["code"] == "not_found"
