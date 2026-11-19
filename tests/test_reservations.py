@@ -427,3 +427,15 @@ def test_reservation_pagination(
     ]
 
     assert set(all_ids) == set(created_ids)
+
+
+# Test that invalid pagination parameters return 400
+def test_invalid_pagination(client, auth_headers):
+
+    response = client.get(
+        "/api/v1/reservations?page=-1&per_page=10",
+        headers=auth_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json["error"]["code"] == "invalid_input"
