@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 
 from app.reservations import reservations_bp
+from app.tables import tables_bp
 
 
 def create_app():
@@ -19,5 +20,8 @@ def create_app():
 
     # Register reservation routes
     app.register_blueprint(reservations_bp)
+
+    # Register table routes
+    app.register_blueprint(tables_bp)
 
     return app
